@@ -20,6 +20,10 @@
         @apply(--scary-mdx-row);
       }
 
+      .row[hidden] {
+        display: none;
+      }
+
       .cell {
         display: table-cell;
         padding: 1px 5px;
@@ -52,6 +56,7 @@
 
       .row-header {
         font-weight: bold;
+        cursor: pointer;
         @apply(--scary-mdx-row-header);
       }
 
@@ -101,9 +106,12 @@
         </div>
       </template>
       <template is="dom-repeat" items="[[data.rows]]"" as="row" index-as="rowNo">
-        <div class="row body">
-          <template is="dom-repeat" items="[[row]]" as="rowCaption">
-            <span class="cell row-header" level$="[[rowCaption.level]]">[[rowCaption.name]]</span>
+        <div class="row" hidden$="[[row.hidden]]">
+          <template is="dom-repeat" items="[[row]]" as="rowCaption" index-as="rowCaptionNo">
+            <span class="cell row-header"
+                  row-number="[[rowNo]]"
+                  level$="[[rowCaption.level]]"
+                  on-tap="_handleRowClick">[[rowCaption.name]]</span>
           </template>
           <template is="dom-repeat" items="[[data.cols]]" as="col" index-as="colNo">
             <span class="cell value">[[_getCellValue(data.cells, rowNo, colNo)]]</span>
@@ -128,6 +136,41 @@
 
       _getCellValue: function (cells, row, col) {
         return cells[row][col];
+      },
+
+      _handleRowClick: function (e) {
+        this.set(['data', 'rows', e.model.rowNo, 'collapsed'], !this.data.rows[e.model.rowNo].collapsed);
+        this._updateRows(e.model.rowNo);
+      },
+
+      _updateRows: function (row) {
+        var i;
+
+        var collapsed = this.data.rows[row].collapsed;
+        var parents = [collapsed];
+        var level = this.data.rows[row][0].level;
+        var levels = [level];
+
+        for (i = row + 1; i < this.data.rows.length; i++) {
+          if (this.data.rows[i][0].level <= level) {
+            while (this.data.rows[i][0].level <= level) {
+              level = levels.pop();
+              collapsed = parents.pop();
+            }
+            if (level === undefined) {
+              return;
+            }
+            levels.push(level);
+            parents.push(collapsed);
+          }
+          if (this.data.rows[i][0].level > level) {
+            this.set(['data', 'rows', i, 'hidden'], collapsed);
+            level = this.data.rows[i][0].level;
+            levels.push(level);
+            collapsed = this.data.rows[i].collapsed || collapsed;
+            parents.push(collapsed);
+          }
+        }
       }
 
     });

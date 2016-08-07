@@ -8,36 +8,44 @@ function parse_axis_info($axis)
     $data = array();
 
     foreach ($axis->HierarchyInfo as $hierarchy) {
-        $data[] = (string) $hierarchy["name"];
+        $data[] = array(
+            "name" => (string) $hierarchy["name"]
+        );
     }
     return $data;
 }
 
 function parse_axis($axis)
 {
-    $data = array();
+    $tuples = array();
 
     foreach ($axis->Tuples->Tuple as $tuple) {
         $members = array();
-        foreach($tuple->Member as $member) {
+        foreach ($tuple->Member as $member) {
             $members[] = array(
-                "name" => (string) $member->Caption,
-                "level" => (int) $member->LNum
+                "Caption" => (string) $member->Caption,
+                "LNum" => (int) $member->LNum
             );
         }
-        $data[] = $members;
+        $tuples[] = array(
+            "Members" => $members
+        );
     }
-    return $data;
+    return array(
+        "Tuples" => $tuples
+    );
 }
 
-$colsInfo = parse_axis_info($xml->root->OlapInfo->AxesInfo->AxisInfo[0]);
-$rowsInfo = parse_axis_info($xml->root->OlapInfo->AxesInfo->AxisInfo[1]);
+$axixInfo = array();
+$axisInfo[0] = parse_axis_info($xml->root->OlapInfo->AxesInfo->AxisInfo[0]);
+$axisInfo[1] = parse_axis_info($xml->root->OlapInfo->AxesInfo->AxisInfo[1]);
 
-$cols = parse_axis($xml->root->Axes->Axis[0]);
-$rows = parse_axis($xml->root->Axes->Axis[1]);
+$axis = array();
+$axis[0] = parse_axis($xml->root->Axes->Axis[0]);
+$axis[1] = parse_axis($xml->root->Axes->Axis[1]);
 
-$col_count = count($cols);
-$row_count = count($rows);
+$col_count = count($axis[0]["Tuples"]);
+$row_count = count($axis[1]["Tuples"]);
 
 function empty_array($count, $val)
 {
@@ -48,21 +56,19 @@ function empty_array($count, $val)
     return $array;
 }
 
-$cells = empty_array($row_count, empty_array($col_count, 0));
+$cell = empty_array($row_count * $col_count, "");
 
-foreach($xml->root->CellData->Cell as $cell)
-{
-    $ordinal = (int) $cell["CellOrdinal"];
-    $row = floor($ordinal / $col_count);
-    $col = $ordinal - $row * $col_count;
-    $cells[$row][$col] = (float) $cell->Value;
+foreach ($xml->root->CellData->Cell as $cellData) {
+    $ordinal = (int) $cellData["CellOrdinal"];
+    $cell[$ordinal] = (string) $cellData->FmtValue;
 }
 
-
 echo(json_encode(array(
-    "rowsInfo" => $rowsInfo,
-    "rows" => $rows,
-    "colsInfo" => $colsInfo,
-    "cols" => $cols,
-    "cells" => $cells
+    "OlapInfo" => array(
+        "AxesInfo" => $axisInfo
+    ),
+    "Axes" => $axis,
+    "CellData" => array(
+        "Cell" => $cell
+    )
 )));

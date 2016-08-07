@@ -95,26 +95,26 @@
       }
     </style>
     <div class="table">
-      <template is="dom-repeat" items="[[data.colsInfo]]" as="colinfo" index-as="colNo">
+      <template is="dom-repeat" items="[[data.OlapInfo.AxesInfo.0]]" as="colinfo" index-as="colNo">
         <div class="row">
-          <template is="dom-repeat" items="[[data.rowsInfo]]">
-            <span class="cell col-caption">[[colinfo]]</span>
+          <template is="dom-repeat" items="[[data.OlapInfo.AxesInfo.1]]">
+            <span class="cell col-caption">[[colinfo.name]]</span>
           </template>
-          <template is="dom-repeat" items="[[data.cols]]" as="col">
+          <template is="dom-repeat" items="[[data.Axes.0.Tuples]]" as="col">
             <span class="cell col-header">[[_getColName(col, colNo)]]</span>
           </template>
         </div>
       </template>
-      <template is="dom-repeat" items="[[data.rows]]"" as="row" index-as="rowNo">
-        <div class="row" hidden$="[[row.hidden]]">
-          <template is="dom-repeat" items="[[row]]" as="rowCaption" index-as="rowCaptionNo">
+      <template is="dom-repeat" items="[[data.Axes.1.Tuples]]" as="row" index-as="rowNo">
+        <div class="row body" hidden$="[[row.hidden]]">
+          <template is="dom-repeat" items="[[row.Members]]" as="rowCaption" index-as="rowCaptionNo">
             <span class="cell row-header"
                   row-number="[[rowNo]]"
-                  level$="[[rowCaption.level]]"
-                  on-tap="_handleRowClick">[[rowCaption.name]]</span>
+                  level$="[[rowCaption.LNum]]"
+                  on-tap="_handleRowClick">[[rowCaption.Caption]]</span>
           </template>
-          <template is="dom-repeat" items="[[data.cols]]" as="col" index-as="colNo">
-            <span class="cell value">[[_getCellValue(data.cells, rowNo, colNo)]]</span>
+          <template is="dom-repeat" items="[[data.Axes.0.Tuples]]" as="col" index-as="colNo">
+            <span class="cell value">[[_getCellValue(data.CellData.Cell, data.Axes.0.Tuples.length, rowNo, colNo)]]</span>
           </template>
         </div>
       </template>
@@ -127,48 +127,75 @@
       is: 'scary-mdx-table',
 
       properties: {
-        data: Object
+        data: {
+          type: Object,
+          observer: '_dataChanged'
+        },
+
+        rows: Array,
+        cols: Array,
+        rowHeaders: Array,
+        colHeaders: Array,
+        cells: Array
+      },
+
+      _dataChanged: function () {
+        this._updateRows(0);
+      },
+
+      _isHidden: function (row) {
+        return this.data.Axes[1].Tuples[row].hidden;
       },
 
       _getColName: function (col, colNo) {
-        return col[colNo].name;
+        return col.Members[colNo].Caption;
       },
 
-      _getCellValue: function (cells, row, col) {
-        return cells[row][col];
+      _getCellValue: function (cells, cols, row, col) {
+        return cells[row * cols + col];
       },
 
       _handleRowClick: function (e) {
-        this.set(['data', 'rows', e.model.rowNo, 'collapsed'], !this.data.rows[e.model.rowNo].collapsed);
+        this.set(['data.Axes.1.Tuples', e.model.rowNo, 'expanded'], !this.data.Axes[1].Tuples[e.model.rowNo].expanded);
         this._updateRows(e.model.rowNo);
       },
 
       _updateRows: function (row) {
+        if (!this.data) {
+          return;
+        }
+
         var i;
 
-        var collapsed = this.data.rows[row].collapsed;
-        var parents = [collapsed];
-        var level = this.data.rows[row][0].level;
+        var expanded = this.data.Axes[1].Tuples[row].expanded || false;
+        var parents = [expanded];
+        var level = this.data.Axes[1].Tuples[row].Members[0].LNum;
         var levels = [level];
 
-        for (i = row + 1; i < this.data.rows.length; i++) {
-          if (this.data.rows[i][0].level <= level) {
-            while (this.data.rows[i][0].level <= level) {
+        if (row === 0) {
+          this.set(['data.Axes.1.Tuples', row, 'hidden'], false);
+        }
+
+
+        for (i = row + 1; i < this.data.Axes[1].Tuples.length; i++) {
+          if (this.data.Axes[1].Tuples[i].Members[0].LNum <= level) {
+            while (this.data.Axes[1].Tuples[i].Members[0].LNum <= level) {
               level = levels.pop();
-              collapsed = parents.pop();
+              expanded = parents.pop();
             }
             if (level === undefined) {
               return;
             }
             levels.push(level);
-            parents.push(collapsed);
+            parents.push(expanded);
           }
-          if (this.data.rows[i][0].level > level) {
-            this.set(['data', 'rows', i, 'hidden'], collapsed);
-            level = this.data.rows[i][0].level;
+          if (this.data.Axes[1].Tuples[i].Members[0].LNum > level) {
+            console.log(expanded);
+            this.set(['data.Axes.1.Tuples', i, 'hidden'], !expanded);
+            level = this.data.Axes[1].Tuples[i].Members[0].LNum;
             levels.push(level);
-            collapsed = this.data.rows[i].collapsed || collapsed;
-            parents.push(collapsed);
+            expanded = (this.data.Axes[1].Tuples[i].expanded || false) && expanded;
+            parents.push(expanded);
           }
         }
       }

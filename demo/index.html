@@ -7,6 +7,7 @@
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
 
     <link rel="import" href="../../iron-ajax/iron-ajax.html">
+    <link rel="import" href="../../scary-mdx-data/scary-mdx-data.html">
     <link rel="import" href="../scary-mdx-table.html">
 
     <style is="custom-style">
@@ -24,8 +25,20 @@
   <body>
     <template is="dom-bind" id="app">
       <iron-ajax url="sample.json" last-response="{{data}}" auto></iron-ajax>
+      <scary-mdx-data
+        raw-data="[[data]]"
+        rows="{{rows}}"
+        row-headers="{{rowHeaders}}"
+        cols="{{cols}}"
+        col-headers="{{colHeaders}}"
+        cells="{{cells}}"></scary-mdx-data>
       <h3>scary-mdx-table Demo</h3>
-      <scary-mdx-table data="[[data]]"></scary-mdx-table>
+      <scary-mdx-table
+        rows="[[rows]]"
+        row-headers="[[rowHeaders]]"
+        cols="[[cols]]"
+        col-headers="[[colHeaders]]"
+        cells="[[cells]]"></scary-mdx-table>
     </template>
   </body>
 </html>

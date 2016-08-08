@@ -98,23 +98,23 @@
       <template is="dom-repeat" items="[[colHeaders]]" as="colinfo" index-as="colNo">
         <div class="row">
           <template is="dom-repeat" items="[[rowHeaders]]">
-            <span class="cell col-caption">[[colinfo.name]]</span>
+            <span class="cell col-caption">[[colinfo]]</span>
           </template>
-          <template is="dom-repeat" items="[[cols.Tuples]]" as="col">
+          <template is="dom-repeat" items="[[cols]]" as="col">
             <span class="cell col-header">[[_getColName(col, colNo)]]</span>
           </template>
         </div>
       </template>
-      <template is="dom-repeat" items="[[rows.Tuples]]" as="row" index-as="rowNo">
+      <template is="dom-repeat" items="[[rows]]" as="row" index-as="rowNo">
         <div class="row body" hidden$="[[row.hidden]]">
-          <template is="dom-repeat" items="[[row.Members]]" as="rowCaption" index-as="rowCaptionNo">
+          <template is="dom-repeat" items="[[row.members]]" as="rowCaption" index-as="rowCaptionNo">
             <span class="cell row-header"
                   row-number="[[rowNo]]"
-                  level$="[[rowCaption.LNum]]"
-                  on-tap="_handleRowClick">[[rowCaption.Caption]]</span>
+                  level$="[[rowCaption.level]]"
+                  on-tap="_handleRowClick">[[rowCaption.caption]]</span>
           </template>
-          <template is="dom-repeat" items="[[cols.Tuples]]" as="col" index-as="colNo">
-            <span class="cell value">[[_getCellValue(data.CellData.Cell, cols.Tuples.length, rowNo, colNo)]]</span>
+          <template is="dom-repeat" items="[[cols]]" as="col" index-as="colNo">
+            <span class="cell value">[[_getCellValue(cells, rowNo, colNo)]]</span>
           </template>
         </div>
       </template>
@@ -127,11 +127,6 @@
       is: 'scary-mdx-table',
 
       properties: {
-        data: {
-          type: Object,
-          observer: '_dataChanged'
-        },
-
         rows: Array,
         cols: Array,
         rowHeaders: Array,
@@ -139,47 +134,34 @@
         cells: Array
       },
 
-      _dataChanged: function (data) {
-        if (!data) {
-          return;
-        }
-        this.rows = data.Axes[1];
-        this.rowHeaders = data.OlapInfo.AxesInfo[1];
-        this.cols = data.Axes[0];
-        this.colHeaders = data.OlapInfo.AxesInfo[0];
-        this._updateRows(0);
-      },
-
       _getColName: function (col, colNo) {
-        return col.Members[colNo].Caption;
+        return col.members[colNo].caption;
       },
 
-      _getCellValue: function (cells, cols, row, col) {
-        return cells[row * cols + col];
+      _getCellValue: function (cells, row, col) {
+        var cell = (cells[row] || [])[col] || {};
+        return cell.formatted || '-';
       },
 
       _handleRowClick: function (e) {
-        this.set(['rows.Tuples', e.model.rowNo, 'expanded'], !this.rows.Tuples[e.model.rowNo].expanded);
+        this.set(['rows', e.model.rowNo, 'expanded'], !this.rows[e.model.rowNo].expanded);
+        console.log(this.rows[e.model.rowNo].expanded);
         this._updateRows(e.model.rowNo);
       },
 
       _updateRows: function (row) {
-        if (!this.data) {
+        if (!this.rows) {
           return;
         }
 
-        var expanded = this.rows.Tuples[row].expanded;
+        var expanded = this.rows[row].expanded;
         var parents = [expanded];
-        var level = this.rows.Tuples[row].Members[0].LNum;
+        var level = this.rows[row].members[0].level;
         var levels = [level];
 
-        if (row === 0) {
-          this.set(['rows.Tuples', row, 'hidden'], false);
-        }
-
-        for (var i = row + 1; i < this.rows.Tuples.length; i++) {
-          if (this.rows.Tuples[i].Members[0].LNum <= level) {
-            while (this.rows.Tuples[i].Members[0].LNum <= level) {
+        for (var i = row + 1; i < this.rows.length; i++) {
+          if (this.rows[i].members[0].level <= level) {
+            while (this.rows[i].members[0].level <= level) {
               level = levels.pop();
               expanded = parents.pop();
             }
@@ -189,16 +171,15 @@
             levels.push(level);
             parents.push(expanded);
           }
-          if (this.rows.Tuples[i].Members[0].LNum > level) {
-            this.set(['rows.Tuples', i, 'hidden'], !expanded);
-            level = this.rows.Tuples[i].Members[0].LNum;
+          if (this.rows[i].members[0].level > level) {
+            this.set(['rows', i, 'hidden'], !expanded);
+            level = this.rows[i].members[0].level;
             levels.push(level);
-            expanded = expanded && this.rows.Tuples[i].expanded;
+            expanded = expanded && this.rows[i].expanded;
             parents.push(expanded);
           }
         }
       }
-
     });
   </script>
 </dom-module>

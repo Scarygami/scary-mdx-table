@@ -1,0 +1,125 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`scary-mdx-data`
+A helper element to transfer a raw mdx query result (directly converted from XML to JSON)
+into a suitable format for the other scary-mdx elements.
+
+Ideally you would do this pre-processing in your backend.
+
+This element also explains how the data should be structured for the other scary-mdx elements.
+
+@demo demo/index.html
+-->
+
+<script>
+  Polymer({
+
+    is: 'scary-mdx-data',
+
+    properties: {
+      rawData: {
+        type: Object,
+        observer: '_dataChanged',
+      },
+
+      cells: {
+        type: Array,
+        notify: true
+      },
+
+      colHeaders: {
+        type: Array,
+        notify: true
+      },
+
+      cols: {
+        type: Array,
+        notify: true
+      },
+
+      rowHeaders: {
+        type: Array,
+        notify: true
+      },
+
+      rows: {
+        type: Array,
+        notify: true
+      }
+    },
+
+    _handleAxisInfo: function (data) {
+      if (!(data.HierarchyInfo instanceof Array)) {
+        data.HierarchyInfo = [data.HierarchyInfo];
+      }
+      return data.HierarchyInfo.map(function (hierarchy) {
+        return hierarchy['@attributes'].name.replace(/[\[\]]/g, '');
+      });
+    },
+
+    _handleAxis: function (tuples, isRows) {
+      if (!(tuples instanceof Array)) {
+        tuples = [tuples];
+      }
+      var data = tuples.map(function (tuple) {
+        var members = tuple.Member;
+        if (!(members instanceof Array)) {
+          members = [members];
+        }
+        return {
+          expanded: !isRows,
+          hidden: isRows,
+          members: members.map(this._handleAxisMember)
+        };
+      }.bind(this));
+      if (data.length > 0 && isRows) {
+        data[0].expanded = false;
+        data[0].hidden = false;
+
+        for (var i = 1; i < data.length; i++) {
+          if (data[i].members[0].level === data[0].members[0].level) {
+            data[i].expanded = false;
+            data[0].hidden = false;
+          }
+        }
+      }
+
+      return data;
+    },
+
+    _handleAxisMember: function (member) {
+      return {
+        id: member.UName,
+        caption: member.Caption,
+        level: parseInt(member.LNum, 10)
+      };
+    },
+
+    _handleCells: function (cells, colCount) {
+      var data = [];
+      cells.forEach(function (cell) {
+        var ordinal = parseInt(cell['@attributes'].CellOrdinal, 10);
+        var row = Math.floor(ordinal / colCount);
+        var col = ordinal - row * colCount;
+
+        if (!data[row]) {
+          data[row] = [];
+        }
+        data[row][col] = {
+          value: parseFloat(cell.Value),
+          formatted: cell.FmtValue
+        };
+      });
+      return data;
+    },
+
+    _dataChanged: function (data) {
+      this.colHeaders = this._handleAxisInfo(data.root.OlapInfo.AxesInfo.AxisInfo[0]);
+      this.cols = this._handleAxis(data.root.Axes.Axis[0].Tuples.Tuple, false);
+      this.rowHeaders = this._handleAxisInfo(data.root.OlapInfo.AxesInfo.AxisInfo[1]);
+      this.rows = this._handleAxis(data.root.Axes.Axis[1].Tuples.Tuple, true);
+      this.cells = this._handleCells(data.root.CellData.Cell, this.cols.length);
+    }
+  });
+</script>

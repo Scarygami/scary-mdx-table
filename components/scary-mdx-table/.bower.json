@@ -1,0 +1,28 @@
+{
+  "name": "scary-mdx-table",
+  "main": "scary-mdx-table.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.0.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.0.0",
+    "scary-mdx-data": "Scarygami/scary-mdx-data#master",
+    "google-chart": "GoogleWebComponents/google-chart#^1.0.0"
+  },
+  "homepage": "https://github.com/Scarygami/scary-mdx-table",
+  "_release": "453cace832",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "453cace832551daf340e07712ad68cb046e8ed53"
+  },
+  "_source": "git://github.com/Scarygami/scary-mdx-table.git",
+  "_target": "master",
+  "_originalSource": "Scarygami/scary-mdx-table",
+  "_direct": true
+}

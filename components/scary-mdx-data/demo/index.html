@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <title>scary-mdx-data demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-ajax/iron-ajax.html">
+    <link rel="import" href="../scary-mdx-data.html">
+
+  </head>
+  <body>
+    <template is="dom-bind" id="app">
+      <iron-ajax url="sample.json" last-response="{{data}}" auto></iron-ajax>
+      <scary-mdx-data raw-data="[[data]]" rows="{{rows}}" cols="{{cols}}" cells="{{cells}}" row-headers="{{rowHeaders}}" col-headers="{{colHeaders}}"></scary-mdx-data>
+      <b>colHeaders:</b>
+      <pre>[[stringify(colHeaders)]]</pre>
+      <hr><b>cols:</b>
+      <pre>[[stringify(cols)]]</pre>
+      <hr><b>rowHeaders:</b>
+      <pre>[[stringify(rowHeaders)]]</pre>
+      <hr><b>rows:</b>
+      <pre>[[stringify(rows)]]</pre>
+      <hr><b>cells:</b>
+      <pre>[[stringify(cells)]]</pre>
+    </template>
+    <script>
+      document.getElementById('app').stringify = function (data) {
+        return JSON.stringify(data, null, 2);
+      };
+    </script>
+  </body>
+</html>

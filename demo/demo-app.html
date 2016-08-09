@@ -1,0 +1,198 @@
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-ajax/iron-ajax.html">
+<link rel="import" href="../../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../google-chart/google-chart.html">
+
+<link rel="import" href="../../scary-mdx-data/scary-mdx-data.html">
+<link rel="import" href="../scary-mdx-table.html">
+
+<dom-module id="demo-app">
+  <template>
+    <style>
+      scary-mdx-table {
+        --scary-mdx-cell: {
+          border: 1px solid gray;
+        };
+
+        --scary-mdx-row-header: {
+          background-color: #EEE;
+        };
+
+        --scary-mdx-col-header: {
+          background-color: #EEE;
+        };
+
+        --scary-mdx-col-caption: {
+          background-color: #CCC;
+        };
+
+        --scary-mdx-value: {
+          cursor: pointer;
+        }
+      }
+
+      #charts {
+        @apply(--layout-horizontal);
+      }
+    </style>
+
+    <iron-ajax url="sample.json" auto last-response="{{data}}"></iron-ajax>
+    <scary-mdx-data
+      raw-data="[[data]]"
+      rows="{{rows}}"
+      row-headers="{{rowHeaders}}"
+      cols="{{cols}}"
+      col-headers="{{colHeaders}}"
+      cells="{{cells}}"></scary-mdx-data>
+    <h3>scary-mdx-table Demo</h3>
+    <scary-mdx-table
+      rows="[[rows]]"
+      row-headers="[[rowHeaders]]"
+      cols="[[cols]]"
+      col-headers="[[colHeaders]]"
+      cells="[[cells]]"
+      on-cell-selected="cellSelected"
+      on-row-expanded="rowSelected"
+      on-row-collapsed="rowSelected"></scary-mdx-table>
+
+    <div id="charts">
+      <google-chart
+        type="pie"
+        options="[[chart1Options]]"
+        cols="[[chart1Cols]]"
+        rows="[[chart1Rows]]"></google-chart>
+
+      <google-chart
+        type="column"
+        options="[[chart2Options]]"
+        cols="[[chart2Cols]]"
+        rows="[[chart2Rows]]"></google-chart>
+      </div>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'demo-app',
+      properties: {
+        /**
+         * Raw data from backend
+         */
+        data: Object,
+
+        /**
+         * Data decoded via scary-mdx-data element
+         */
+        rows: Array,
+        rowHeaders: Array,
+        cols: Array,
+        colHeaders: Array,
+        cells: Array,
+
+        /**
+         * Data to be displayed in first chart
+         */
+        chart1Cols: Array,
+        chart1Rows: Array,
+        chart1Options: Object,
+
+        /**
+         * Data to be displayed in second chart
+         */
+        chart2Cols: Array,
+        chart2Rows: Array,
+        chart2Options: Object
+      },
+
+      observers: [
+        'dataChanged(colHeaders, cols, rowHeaders, rows, cells)'
+      ],
+
+      dataChanged: function (colHeaders, cols, rowHeaders, rows) {
+        if (cols.length > 0 && rows.length > 0) {
+          this.drawCharts(0, 0);
+        }
+      },
+
+      cellSelected: function (e) {
+        this.drawCharts(e.detail.row, e.detail.col);
+      },
+
+      rowSelected: function (e) {
+        this.drawCharts(e.detail.row, 0);
+      },
+
+      getValue: function (row, col) {
+        if (!this.cells[row]) {
+          return 0;
+        }
+        if (!this.cells[row][col]) {
+          return 0;
+        }
+        return this.cells[row][col].value;
+      },
+
+      drawCharts: function (row, col) {
+        this.chart1Cols = [
+          {
+            label: 'Product',
+            type: 'string'
+          },
+          {
+            label: 'Sales',
+            type: 'number'
+          }
+        ];
+
+        this.chart1Options = {
+          title: this.rows[row].members[0].caption + ' / ' + this.cols[col].members[0].caption
+        };
+
+        // Get data for all subcategories of selected product in selected year
+        var rows1 = [];
+        var level = this.rows[row].members[0].level + 1;
+        var r = row + 1;
+        while (r < this.rows.length && this.rows[r].members[0].level >= level) {
+          if (this.rows[r].members[0].level === level) {
+            rows1.push([
+              this.rows[r].members[0].caption,
+              this.getValue(r, col)
+            ]);
+          }
+          r++;
+        }
+        if (rows1.length === 0) {
+          rows1.push([
+            this.rows[row].members[0].caption,
+            this.getValue(row, col)
+          ]);
+        }
+        this.chart1Rows = rows1;
+
+        this.chart2Cols = [
+          {
+            label: 'Year',
+            type: 'string'
+          },
+          {
+            label: 'Sales',
+            type: 'number'
+          }
+        ];
+        this.chart2Options = {
+          title: this.rows[row].members[0].caption
+        };
+
+        // Get data for all years of selected product
+        var rows2 = [];
+        for (var c = 1; c < this.cols.length; c++) {
+          rows2.push([
+            this.cols[c].members[0].caption,
+            this.getValue(row, c)
+          ]);
+        }
+        this.chart2Rows = rows2;
+      }
+    });
+  </script>
+</dom-module>

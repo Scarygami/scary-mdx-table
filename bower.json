@@ -11,6 +11,7 @@
     "web-component-tester": "^4.0.0",
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
     "iron-ajax": "PolymerElements/iron-ajax#^1.0.0",
-    "scary-mdx-data": "Scarygami/scary-mdx-data#master"
+    "scary-mdx-data": "Scarygami/scary-mdx-data#master",
+    "google-chart": "GoogleWebComponents/google-chart#^1.0.0"
   }
 }

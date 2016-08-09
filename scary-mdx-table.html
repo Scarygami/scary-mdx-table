@@ -20,10 +20,6 @@
         @apply(--scary-mdx-row);
       }
 
-      .row[hidden] {
-        display: none;
-      }
-
       .cell {
         display: table-cell;
         padding: 1px 5px;
@@ -106,17 +102,19 @@
         </div>
       </template>
       <template is="dom-repeat" items="[[rows]]" as="row" index-as="rowNo">
-        <div class="row body" hidden$="[[row.hidden]]">
-          <template is="dom-repeat" items="[[row.members]]" as="rowCaption" index-as="rowCaptionNo">
-            <span class="cell row-header"
-                  row-number="[[rowNo]]"
-                  level$="[[rowCaption.level]]"
-                  on-tap="_handleRowClick">[[rowCaption.caption]]</span>
-          </template>
-          <template is="dom-repeat" items="[[cols]]" as="col" index-as="colNo">
-            <span class="cell value">[[_getCellValue(cells, rowNo, colNo)]]</span>
-          </template>
-        </div>
+        <template is="dom-if" if="[[!row.hidden]]">
+          <div class="row body">
+            <template is="dom-repeat" items="[[row.members]]" as="rowCaption" index-as="rowCaptionNo">
+              <span class="cell row-header"
+                    row-number="[[rowNo]]"
+                    level$="[[rowCaption.level]]"
+                    on-tap="_handleRowClick">[[rowCaption.caption]]</span>
+            </template>
+            <template is="dom-repeat" items="[[cols]]" as="col" index-as="colNo">
+              <span class="cell value" row="[[rowNo]]" col="[[colNo]]" on-tap="_handleCellClick">[[_getCellValue(cells, rowNo, colNo)]]</span>
+            </template>
+          </div>
+        </template>
       </template>
     </div>
   </template>
@@ -143,10 +141,25 @@
         return cell.formatted || '-';
       },
 
+      _handleCellClick: function (e) {
+        this.fire('cell-selected', {
+          row: e.model.rowNo,
+          col: e.model.colNo
+        });
+      },
+
       _handleRowClick: function (e) {
         this.set(['rows', e.model.rowNo, 'expanded'], !this.rows[e.model.rowNo].expanded);
-        console.log(this.rows[e.model.rowNo].expanded);
         this._updateRows(e.model.rowNo);
+        if (this.rows[e.model.rowNo].expanded) {
+          this.fire('row-expanded', {
+            row: e.model.rowNo
+          });
+        } else {
+          this.fire('row-collapsed', {
+            row: e.model.rowNo
+          });
+        }
       },
 
       _updateRows: function (row) {
